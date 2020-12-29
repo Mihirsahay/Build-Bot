@@ -102,6 +102,14 @@ check_rom_dir() {
   fi
 }
 
+clear_ram() {
+  # Cleaning RAM
+  sudo sh -c "sync"
+  sudo sh -c "echo 3 > /proc/sys/vm/drop_caches"
+  echo "RAM CLEARED!"
+  free -h
+}
+
 device_clean() {
   check_rom_dir
   source conf.rom
@@ -112,17 +120,12 @@ device_clean() {
   make deviceclean -j$( nproc --all )
 }
 
-free_up_ram() {
-  # Cleaning RAM
-  sudo sh -c "sync"
-  sudo sh -c "echo 3 > /proc/sys/vm/drop_caches"
-}
-
 help() {
   cat <<-_EOL_
 $(echo -e "${green}Usage:${nocol}")
 -h,  --help             Shows brief help
 -i,  --install          Install Build-Bot in /usr/bin
+-cr,  --clear-ram       Clears RAM, if you need to free up ram for some reason
 -ec, --export-config    Exports a sample config file to your current rom directory
 -dc, --device-clean     Do device clean, removes whole out dir for clean building
 -ic, --install-clean    Do installclean for faster build
@@ -184,6 +187,12 @@ case ${@} in
   -br|--build-rom)
     echo ""
     build_rom
+    echo ""
+    exit 0
+  ;;
+  -cr|--clear-ram)
+    echo ""
+    clear_ram
     echo ""
     exit 0
   ;;
@@ -250,11 +259,12 @@ _EOL_
   -i|--install)
     echo ""
     cp -f "${PWD}"/build-bot.sh /usr/bin/bbot
+    sudo sh -c "rm /usr/bin/build-bot"
     if [ $? -ne 0 ]; then
       echo "${red}Permission denied, re-run command with sudo!${nocol}"
       exit 1
     else
-      chmod +x /usr/bin/build-bot
+      chmod +x /usr/bin/bbot
     fi
     echo "${green}Installed Build-Bot!${nocol}"
     echo "You can now use build-bot from any dir, just use ${green}bbot${nocol} command"
